@@ -22,7 +22,7 @@ struct Agent {
   int id;      // agent
   int t;       // internal timestep
   Mode mode;   // mode
-  Node* head;  // head
+  Node* head;  // head   head->tail
   Node* tail;  // tail
   Path path;   // plan
 

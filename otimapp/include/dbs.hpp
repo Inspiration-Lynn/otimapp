@@ -19,6 +19,7 @@ private:
   // main
   void run();
 
+  // 禁止agent路径中出现from->to
   struct Constraint {
     int agent;     // agent
     Node* parent;  // from
@@ -33,7 +34,8 @@ private:
     Plan paths;               // solution
     Constraints constraints;  // constraints
     int f;                    // #(head-on collisions)
-    bool valid;               // false -> no path is found
+            // 用于dbs目标函数，表示当前solution中的swap冲突个数
+    bool valid;  // false -> no path is found
 
     HighLevelNode() : constraints({}), f(0), valid(true) {}
   };

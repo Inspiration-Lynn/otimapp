@@ -33,11 +33,11 @@ private:
   void end();
 
 protected:
-  virtual void exec(){};  // main
+  virtual void exec() {};  // main
 
 public:
   MinimumSolver(Problem* _P);
-  virtual ~MinimumSolver(){};
+  virtual ~MinimumSolver() {};
 
   // getter
   Plan getSolution() const { return solution; };
@@ -110,7 +110,7 @@ protected:
   // -------------------------------
   // utilities for solver options
 public:
-  virtual void setParams(int argc, char* argv[]){};
+  virtual void setParams(int argc, char* argv[]) {};
   void setVerbose(bool _verbose) { verbose = _verbose; }
 
   // -------------------------------
@@ -144,7 +144,7 @@ public:
     Node* v;
     int g;
     int f;
-    AstarNode* p;  // parent
+    AstarNode* p;  // parent（上一个node）
   };
   using AstarNodes = std::vector<AstarNode*>;
   using CheckInvalidMove = std::function<bool(Node*, Node*)>;

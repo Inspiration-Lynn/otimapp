@@ -56,7 +56,7 @@ void Solver::exec()
 {
   // create distance table
   info("  pre-processing, create distance table by BFS & create goal table");
-  createDistanceTable();
+  createDistanceTable();  // 用于计算h-value
   for (int i = 0; i < P->getNum(); ++i) table_goals[P->getGoal(i)->id] = true;
   info("  done, elapsed: ", getSolverElapsedTime());
 
@@ -183,6 +183,7 @@ void Solver::printHelpWithoutOption(const std::string& solver_name)
 
 // -------------------------------
 // distance
+// 对于agent i, 计算当前s节点到目标节点的距离(用于计算h-value)
 // -------------------------------
 int Solver::pathDist(const int i, Node* const s) const
 {
@@ -191,12 +192,14 @@ int Solver::pathDist(const int i, Node* const s) const
 
 int Solver::pathDist(const int i) const { return pathDist(i, P->getStart(i)); }
 
+// 为每个目标节点构建一张到其他节点的最短路径距离表
+// 用于h的计算
 void Solver::createDistanceTable()
 {
   for (int i = 0; i < P->getNum(); ++i) {
     // breadth first search
     std::queue<Node*> OPEN;
-    Node* n = P->getGoal(i);
+    Node* n = P->getGoal(i);  // 目标位置
     OPEN.push(n);
     distance_table[i][n->id] = 0;
     while (!OPEN.empty()) {
@@ -218,19 +221,27 @@ void Solver::createDistanceTable()
 // -------------------------------
 Solver::CompareAstarNodes Solver::compareAstarNodesDefault = [](AstarNode* a,
                                                                 AstarNode* b) {
+  // f = g + h
   if (a->f != b->f) return a->f > b->f;
   if (a->g != b->g) return a->g < b->g;
   return false;
 };
 
+// single agent path finding: A* (根据死锁约束进行了改造)
 Path Solver::getPath(const int id, CheckInvalidMove checkInvalidNode,
                      CompareAstarNodes compare)
 {
+  // 获取开始位置和目标位置
   Node* const s = P->getStart(id);
   Node* const g = P->getGoal(id);
 
-  AstarNodes GC;  // garbage collection
+  // GC 被用作垃圾回收的容器，保存所有创建的 AstarNode
+  // 指针，以便在后续需要时统一处理（如释放内存）
+  AstarNodes GC;  // garbage collection ??
   auto createNewNode = [&GC](Node* v, int g, int f, AstarNode* p) {
+    // 𝑓(𝑛)=𝑔(𝑛)+ℎ(𝑛)
+    // 𝑔(𝑛): 𝑐𝑜𝑠𝑡_𝑠𝑜_𝑓𝑎𝑟，表示当前点𝑛到起点的距离
+    // ℎ(𝑛): 启发函数，表示当前点𝑛到目标点的距离
     AstarNode* new_node = new AstarNode{v, g, f, p};
     GC.push_back(new_node);
     return new_node;
@@ -238,7 +249,7 @@ Path Solver::getPath(const int id, CheckInvalidMove checkInvalidNode,
 
   // OPEN and CLOSE list
   std::priority_queue<AstarNode*, AstarNodes, decltype(compare)> OPEN(compare);
-  std::vector<bool> CLOSE(G->getNodesSize(), false);
+  std::vector<bool> CLOSE(G->getNodesSize(), false);  // 已扩展的node存在CLOSE中
 
   // initial node
   AstarNode* n = createNewNode(s, 0, pathDist(id, s), nullptr);
@@ -271,15 +282,15 @@ Path Solver::getPath(const int id, CheckInvalidMove checkInvalidNode,
       // already searched?
       if (CLOSE[u->id]) continue;
       // check constraints
-      if (checkInvalidNode(u, n->v)) continue;
+      if (checkInvalidNode(u, n->v)) continue;  // 违反了约束，如包含路径(u->v)
       int g_cost = n->g + 1;
       OPEN.push(createNewNode(u, g_cost, g_cost + pathDist(id, u), n));
     }
   }
 
   Path path;
-  if (!invalid) {  // success
-    while (n != nullptr) {
+  if (!invalid) {           // success
+    while (n != nullptr) {  // 构建path，该path满足约束
       path.push_back(n->v);
       n = n->p;
     }
@@ -297,9 +308,11 @@ Path Solver::getPrioritizedPath(const int id, const Plan& paths,
 {
   Node* const g = P->getGoal(id);
 
+  // DBS中OPEN优先级队列的比较函数
+  // 首先比较f-value, f-value相同的情况下加入tie-breaking策略
   auto compare = [&](AstarNode* a, AstarNode* b) {
     if (a->f != b->f) return a->f > b->f;
-    // tie break
+    // tie break: shorter from fragment is better
     int fragments_a = table.t_from[a->v->id].size();
     int fragments_b = table.t_from[b->v->id].size();
     if (fragments_a != fragments_b) return fragments_a > fragments_b;
@@ -307,11 +320,12 @@ Path Solver::getPrioritizedPath(const int id, const Plan& paths,
     return a->v->id < b->v->id;
   };
 
+  // move: (parent->child)是否合法
   auto checkInvalidNode = [&](Node* child, Node* parent) {
     // condition 1, avoid goals
     if (child != g && table_goals[child->id]) return true;
-
     // condition 2, avoid potential deadlocks
+    // to fragment table[parent]
     for (auto c : table.t_to[parent->id]) {
       if (c->path.front() == child) return true;
     }

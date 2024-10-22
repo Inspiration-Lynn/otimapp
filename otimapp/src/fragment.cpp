@@ -42,6 +42,8 @@ bool TableFragment::existDuplication(const std::deque<Node*>& path,
   return false;
 }
 
+// 检查给定路径的拓扑条件是否有效 (验证路径是否符合最大片段大小的限制)
+// ?
 bool TableFragment::isValidTopologyCondition(
     const std::deque<Node*>& path) const
 {
@@ -57,6 +59,7 @@ bool TableFragment::isValidTopologyCondition(
   // finding shortest path
   Nodes prohibited;
   for (int t = 1; t < (int)path.size() - 1; ++t) prohibited.push_back(path[t]);
+  // 确保在排除中间节点的情况下，这段路径依然是可达的
   auto p = G->getPath(tail, head, prohibited);
   if (p.empty()) return false;
   if ((int)p.size() - 1 + length > max_fragment_size) return false;
@@ -133,6 +136,7 @@ Fragment* TableFragment::getPotentialDeadlockIfExist(const int id, Node* head,
   return getPotentialDeadlockIfExist(path, agents);
 }
 
+// 为一个代理注册新路径并检查潜在的死锁
 // return deadlock or nullptr
 Fragment* TableFragment::registerNewPath(const int id, const Path path,
                                          const bool force, const int time_limit)

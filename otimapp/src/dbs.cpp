@@ -9,6 +9,7 @@ DBS::DBS(Problem* _P) : Solver(_P), max_fragment_size(DEFAULT_MAX_FRAGMENT_SIZE)
 
 DBS::~DBS() {}
 
+// main alg: DBS
 void DBS::run()
 {
   // set objective function
@@ -59,7 +60,7 @@ void DBS::run()
 
     // create new nodes
     for (auto c : constraints) {
-      auto m = invoke(n, c);
+      auto m = invoke(n, c);  // 根据DBS中的父节点创建子节点
       if (m->valid) {
         Tree.push(m);
         ++h_node_num;
@@ -85,6 +86,7 @@ DBS::HighLevelNode_p DBS::getInitialNode()
   for (int i = 0; i < P->getNum(); ++i) {
     // find a deadlock-free path as much as possible
     auto t_p = Time::now();
+    // 当前solution=∅, 为agent i规划路径
     auto p = getPrioritizedPath(i, n->paths, *table);
     elapsed_time_pathfinding += getElapsedTime(t_p);
 
@@ -117,6 +119,7 @@ DBS::HighLevelNode_p DBS::getInitialNode()
   return n;
 }
 
+// 根据父节点和约束，扩展子节点
 DBS::HighLevelNode_p DBS::invoke(HighLevelNode_p n, Constraint_p c)
 {
   auto m = std::make_shared<HighLevelNode>();
@@ -140,6 +143,7 @@ DBS::HighLevelNode_p DBS::invoke(HighLevelNode_p n, Constraint_p c)
   return m;
 }
 
+// high level: 为agent id考虑约束规划路径
 Path DBS::getConstrainedPath(const int id, HighLevelNode_p node)
 {
   Node* const g = P->getGoal(id);
@@ -203,7 +207,7 @@ DBS::Constraints DBS::getConstraints(const Plan& paths)
     elapsed_time_deadlock_detection += getElapsedTime(t_d);
     // found potential deadlocks
     if (c != nullptr) {
-      // create constraints
+      // 根据找到的潜在死锁，创建约束
       for (int i = 0; i < (int)c->agents.size(); ++i) {
         constraints.push_back(std::make_shared<Constraint>(
             c->agents[i], c->path[i], c->path[i + 1]));
@@ -219,12 +223,14 @@ DBS::Constraints DBS::getConstraints(const Plan& paths)
   return constraints;
 }
 
+// 计算一个solution中的swap冲突个数
 int DBS::countsSwapConlicts(const Plan& paths)
 {
   std::vector<std::vector<int>> to_from_table(G->getNodesSize());
   int cnt = 0;
   for (auto p : paths) {
     for (int t = 1; t < (int)p.size(); ++t) {
+      // 依次取出每一对：u->v
       auto u = p[t - 1];
       auto v = p[t];
       // check head-on collisions

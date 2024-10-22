@@ -2,6 +2,9 @@
 #include <graph.hpp>
 #include <queue>
 
+/*
+a pair of two lists: agents & path
+*/
 struct Fragment {
   std::deque<Node*>
       path;  // head -> tail, for the convenience, I did not use "clocks"
@@ -11,6 +14,13 @@ struct Fragment {
 };
 
 struct TableFragment {
+  /*
+  2 fragment table: table from & table to
+  - use one vertex as the key
+  - table from: stores all the fragments starting from the vertex
+  - table to:   stores all the fragments ending at the vertex
+  - A fragment is registered in both tables
+  */
   std::vector<std::vector<Fragment*>> t_from;  // table from
   std::vector<std::vector<Fragment*>> t_to;    // table to
   Graph* G;

@@ -44,7 +44,7 @@ void Execution::halt(const std::string& msg) const
 }
 
 // -------------------------------
-// read planning
+// read planning from file
 // -------------------------------
 Plan Execution::getPlan() const
 {
@@ -379,6 +379,7 @@ void PrimitiveExecution::simulate()
         return checkNoDeadlock(A[a_j], agents);
       };
 
+  // agent a行动一步
   auto activate = [&](PrimitiveAgent_p a) {
     a->activate(occupancy);
     HIST.push_back(a->getState());  // update record
@@ -387,7 +388,7 @@ void PrimitiveExecution::simulate()
   int num_goal_agents = 0;
 
   while (true) {
-    auto a = randomChoose(A, MT);
+    auto a = randomChoose(A, MT);  // 从agents中随机选择一个agent
     if (a->isFinished()) continue;
 
     PrimitiveAgents vec = {a};
