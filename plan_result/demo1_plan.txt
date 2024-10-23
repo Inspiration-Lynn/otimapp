@@ -1,0 +1,17 @@
+repetation_PP=1
+instance=instance/demo1.txt
+agents=2
+map_file=demo1.map
+seed=0
+solver=PP
+solved=1
+unsolvable=0
+comp_time=0
+elapsed_pathfinding=0
+elapsed_deadlock_detection=0
+starts=(1,0),(3,1),
+goals=(4,0),(1,1),
+sum-of-path-length:9
+plan=
+0:1,2,3,4,
+1:8,13,18,17,16,11,6,

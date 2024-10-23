@@ -6,3 +6,5 @@
 exec.txt
 plan.txt
 .vscode/
+visualizer/third_party/openFrameworks/
+visualizer/openFrameworks.tar.gz
